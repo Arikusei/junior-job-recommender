@@ -1,14 +1,5 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
-
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
-
-    database_url: str = "sqlite:///./data/jobs.db"
-    embedding_model: str = "paraphrase-multilingual-MiniLM-L12-v2"
-    artifacts_dir: str = "./artifacts"
-    ab_control_ratio: float = 0.5
-    log_level: str = "INFO"
-
-
-settings = Settings()
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/jobs.db")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
+ARTIFACTS_DIR = os.getenv("ARTIFACTS_DIR", "./artifacts")

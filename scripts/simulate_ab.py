@@ -1,47 +1,35 @@
-"""Simulate user traffic to populate A/B test metrics."""
-
-from __future__ import annotations
+# накидываем немного трафика чтобы ab/stats не был пустой
 
 import random
+import sys
+from pathlib import Path
 
 import httpx
 
-BASE_URL = "http://127.0.0.1:8000"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+BASE = "http://127.0.0.1:8000"
 
 
-def simulate(rounds: int = 3) -> None:
-    with httpx.Client(base_url=BASE_URL, timeout=30.0) as client:
-        for user_id in range(1, 6):
-            response = client.get(f"/users/{user_id}/recommendations", params={"top_k": 5})
-            response.raise_for_status()
-            recommendations = response.json()
-
-            for item in recommendations:
-                if random.random() < 0.25:
-                    client.post(
+def main():
+    with httpx.Client(base_url=BASE, timeout=30, trust_env=False) as c:
+        for uid in range(1, 6):
+            r = c.get(f"/users/{uid}/recommendations", params={"top_k": 5})
+            r.raise_for_status()
+            for item in r.json():
+                if random.random() < 0.3:
+                    c.post(
                         "/events",
                         json={
-                            "user_id": user_id,
+                            "user_id": uid,
                             "job_id": item["job"]["id"],
                             "event_type": "click",
                             "position": item["position"],
-                            "score": item["score"],
                         },
                     )
 
-        for _ in range(rounds):
-            for user_id in range(1, 6):
-                client.get(f"/users/{user_id}/recommendations", params={"top_k": 5})
-
-        stats = client.get("/ab/stats")
-        stats.raise_for_status()
-        print("A/B stats:")
-        for row in stats.json():
-            print(
-                f"  {row['variant']}: impressions={row['impressions']}, "
-                f"clicks={row['clicks']}, ctr={row['ctr']:.2%}"
-            )
+        print(c.get("/ab/stats").json())
 
 
 if __name__ == "__main__":
-    simulate()
+    main()
