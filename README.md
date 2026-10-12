@@ -1,59 +1,50 @@
-# job-recommender
+# junior-job-recommender
 
-Небольшой пет-проект: рекомендации вакансий для джунов + семантический поиск.
+Пет-проект: REST API рекомендаций вакансий для джуниор-специалистов с семантическим поиском на базе эмбеддингов и векторного индекса FAISS.
 
-Делал для практики перед собесами на ml-позиции. Данные фейковые, вакансии набросал руками.
+Проект создавался для отработки бэкенд-навыков (FastAPI, SQLAlchemy, SQLite, Pydantic) и знакомства с векторным поиском (Sentence-BERT + FAISS).
 
-## что умеет
+## Что умеет сервис
 
-- рекомендации: либо по популярности, либо по сходству резюме с вакансией (sentence-bert + faiss)
-- поиск по тексту запроса
-- простой a/b тест (control vs treatment), смотрю ctr
-- api на fastapi, бд sqlite
+- **Семантический поиск**: поиск вакансий по текстовому запросу на базе векторного сходства (косинусное расстояние / `IndexFlatIP`).
+- **Персональные рекомендации**: ранжирование вакансий по степени соответствия резюме кандидата.
+- **A/B сплитование**: разделение пользователей на когорты `control` (популярные вакансии) и `treatment` (семантические рекомендации) для оценки CTR.
+- **REST API на FastAPI**: валидация входных данных, автоматическая Swagger-документация.
+- **Логирование событий**: запись просмотров и кликов в SQLite для аналитики.
 
-## запуск
+## Быстрый старт
 
-```bash
+```powershell
 python -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
+# Наполнение базы тестовыми данными и сборка индекса FAISS
 python scripts/seed_data.py
-python scripts/build_index.py   # первый раз качает модель, подождать
+python scripts/build_index.py
 
-uvicorn app.main:app --reload
+# Запуск API
+uvicorn app.main:app --reload --port 8000
 ```
 
-доки: http://127.0.0.1:8000/docs
+- Swagger UI: http://127.0.0.1:8000/docs
+- Healthcheck: http://127.0.0.1:8000/health
 
-примеры:
+### Примеры запросов
 
-```
-GET /users/1/recommendations?top_k=5
-POST /search  {"query": "python fastapi junior", "top_k": 5}
-GET /ab/stats
-```
+- `GET /users/1/recommendations?top_k=5` — получить персональные рекомендации для соискателя.
+- `POST /search` с телом `{"query": "python fastapi junior backend", "top_k": 5}` — семантический поиск по описаниям вакансий.
+- `GET /ab/stats` — метрики распределения групп и конверсии в отклики.
 
-## стек
+## Стек технологий
 
-python, fastapi, sqlalchemy, sqlite, sentence-transformers, faiss, sklearn (пока почти не трогал, хочу добавить baseline)
+- **Бэкенд**: Python 3, FastAPI, Pydantic, SQLAlchemy, SQLite.
+- **Векторный поиск**: Sentence-Transformers (`all-MiniLM-L6-v2`), FAISS, NumPy.
+- **Тестирование**: PyTest.
+- **Контейнеризация**: Docker.
 
-## todo
+## Тесты
 
-- [ ] нормальный парсер вакансий вместо seed_data
-- [ ] mlflow для экспериментов
-- [ ] docker нормально проверить на linux
-- [ ] тесты побольше
-
-## тесты
-
-```
+```powershell
 pytest
-```
-
-## docker (черновик)
-
-```
-docker build -t job-rec .
-docker run -p 8000:8000 job-rec
 ```
